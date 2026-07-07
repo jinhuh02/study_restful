@@ -11,9 +11,9 @@ import (
 
 	_ "github.com/go-sql-driver/mysql" // database/sql에 MySQL 드라이버 등록
 
-	"todo-api/internal/handler"
-	"todo-api/internal/repository"
-	"todo-api/internal/service"
+	"player-api/internal/repository"
+	"player-api/internal/resolver"
+	"player-api/internal/service"
 )
 
 func main() {
@@ -35,10 +35,10 @@ func main() {
 	defer db.Close()
 	log.Println("connected to MySQL")
 
-	// 3) 계층 조립: Repository → Service → Handler
-	repo := repository.NewTodoRepository(db)
-	svc := service.NewTodoService(repo)
-	h := handler.NewTodoHandler(svc)
+	// 3) 계층 조립: Repository → Service → resolver
+	repo := repository.NewPlayerRepository(db)
+	svc := service.NewPlayerService(repo)
+	h := resolver.NewPlayerHandler(svc)
 
 	// 4) 라우터 구성
 	mux := http.NewServeMux()

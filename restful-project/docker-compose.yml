@@ -1,9 +1,9 @@
-services:
-  mysql:
-    image: mysql:8.0
+services: # 컨테이너들을 묶어놓은 단위
+  mysql: # 서비스 이름
+    image: mysql:8.0 # 베이스 이미지
     container_name: mysql-db
-    restart: always
-    environment:
+    restart: always # 컨테이너가 종료됐을 때 재시작 정책. always면 꺼질 때마다 무조건 다시 켬.
+    environment: # 컨테이너 내부 환경변수
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: testdb
       MYSQL_USER: myuser
@@ -12,16 +12,14 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # init.sql을 초기화 디렉터리에 넣으면 최초 기동 시 자동 실행됨
       - ./db:/docker-entrypoint-initdb.d
     healthcheck:
-      # MySQL이 실제로 응답 가능한 상태인지 확인
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  server:
+  server: # 서비스 이름
     build: ./server
     container_name: go-server
     restart: always
@@ -30,14 +28,13 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
-      DB_USER: myuser
-      DB_PASSWORD: userpassword
-      DB_NAME: testdb
-      PORT: "8080"
-    depends_on:
+      DB_USER: myuser # 접속 계정 (MYSQL_USER)
+      DB_PASSWORD: userpassword # 계정 비밀번호 (MYSQL_PASSWORD)
+      DB_NAME: testdb # 사용할 DB 이름 (MYSQL_DATABASE)
+      PORT: "8080" # 서버가 리스닝할 포트
+    depends_on: # 서비스 실행 순서를 정하는 키워드. 아래 조건이 충족돼야 이 서비스를 띄움.
       mysql:
-        # MySQL이 healthy 상태가 된 다음에 서버를 띄움
-        condition: service_healthy
+        condition: service_healthy # 단순히 mysql이 "시작됨"이 아니라, healthcheck가 healthy가 될 때까지 대기.
 
 volumes:
   mysql_data:
