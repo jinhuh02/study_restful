@@ -1,0 +1,24 @@
+FROM mysql:8.0
+
+ENV MYSQL_ROOT_PASSWORD=rootpassword
+ENV MYSQL_DATABASE=testdb
+ENV MYSQL_USER=myuser
+ENV MYSQL_PASSWORD=userpassword
+
+# 문서로 포트를 명시하는것 뿐. 실제 포워딩은 얘가 못함
+EXPOSE 3306 
+
+# 빌드
+# docker build -t my-mysql .
+
+# 실행할 때마다 포트포워딩, 볼륨 지정 등을 명령어로 해줘야 함 (번거롭고, 실수로 언제 한번 오타라도 나면 wow)
+# docker run -d --name mysql-db -p 3306:3306 -v mysql_data:/var/lib/mysql my-mysql
+
+# ===========================================================
+
+# 명령어로 실행 시 옵션 사용에 대하여 
+
+# docker run --name mysql-container -e MYSQL_ROOT_PASSWORD=<password> -d -p 3306:3306 mysql:latest
+# -e : 컨테이너 내에서 사용할 환경변수를 설정
+#      MYSQL_ROOT_PASSWORD=<password> MySQL의 root권한의 비번을 <password>로 설정
+# -d : 컨테이너를 detach모드로 실행. (백그라운드. 터미널을 점유하지 않음)
