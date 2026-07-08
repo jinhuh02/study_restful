@@ -10,19 +10,16 @@ import (
 	"player-api/internal/service"
 )
 
-// PlayerHandler는 가장 바깥 계층입니다.
-// HTTP 요청을 해석하고, Service를 호출하고, 결과를 JSON으로 내려주는 일만 합니다.
 type PlayerHandler struct {
 	svc *service.PlayerService // 아래 계층인 Service를 들고 있음
 }
 
-// NewPlayerHandler는 svc를 받아 PlayerHandler를 만들어 반환합니다.
 func NewPlayerHandler(svc *service.PlayerService) *PlayerHandler {
 	return &PlayerHandler{svc: svc}
 }
 
-// RegisterRoutes는 "어떤 HTTP 메서드 + 어떤 경로"가 오면 어떤 함수를 실행할지 등록합니다.
-// (Go 1.22+ 부터 "GET /players" 처럼 메서드까지 한 번에 지정할 수 있습니다.)
+// "어떤 HTTP 메서드 + 어떤 경로"가 오면 어떤 함수를 실행할지 등록합니다.
+// 주소창 접속 = GET
 func (h *PlayerHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /players", h.list)           // 전체 목록
 	mux.HandleFunc("POST /players", h.create)        // 새로 만들기
@@ -30,9 +27,6 @@ func (h *PlayerHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /players/{id}", h.update)    // 수정
 	mux.HandleFunc("DELETE /players/{id}", h.delete) // 삭제
 }
-
-// ---- 요청 본문(JSON) 모양 ----
-// 클라이언트가 보내는 JSON을 담을 구조체입니다.
 
 type createRequest struct {
 	Name string `json:"name"`
@@ -44,9 +38,7 @@ type updateRequest struct {
 	Age  int64  `json:"age"`
 }
 
-// ---- 실제 요청을 처리하는 핸들러들 ----
-
-// list: GET /players
+// R1 전체 조회
 func (h *PlayerHandler) list(w http.ResponseWriter, r *http.Request) {
 	players, err := h.svc.List(r.Context())
 	if err != nil {
@@ -56,7 +48,7 @@ func (h *PlayerHandler) list(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, players) // 200 OK + 목록
 }
 
-// get: GET /players/{id}
+// R2 하나만 조회
 func (h *PlayerHandler) get(w http.ResponseWriter, r *http.Request) {
 	id, ok := parseID(w, r)
 	if !ok {
@@ -69,10 +61,9 @@ func (h *PlayerHandler) get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, player)
 }
 
-// create: POST /players
+// C 생성
 func (h *PlayerHandler) create(w http.ResponseWriter, r *http.Request) {
 	var req createRequest
-	// 요청 본문(JSON)을 req 구조체로 풀어냅니다.
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON body")
 		return
@@ -84,7 +75,7 @@ func (h *PlayerHandler) create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, player) // 201 Created
 }
 
-// update: PUT /players/{id}
+// U 수정
 func (h *PlayerHandler) update(w http.ResponseWriter, r *http.Request) {
 	id, ok := parseID(w, r)
 	if !ok {
@@ -102,7 +93,7 @@ func (h *PlayerHandler) update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, player)
 }
 
-// delete: DELETE /players/{id}
+// D 삭제
 func (h *PlayerHandler) delete(w http.ResponseWriter, r *http.Request) {
 	id, ok := parseID(w, r)
 	if !ok {
@@ -117,7 +108,7 @@ func (h *PlayerHandler) delete(w http.ResponseWriter, r *http.Request) {
 
 // ---- 공통 헬퍼 함수들 ----
 
-// parseID는 URL 경로의 {id}(문자열)를 숫자(int64)로 바꿉니다.
+// URL 경로의 {id}(문자열)를 숫자(int64)로 바꿉니다.
 // 실패하면 400 응답을 보내고 false를 돌려줍니다.
 func parseID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	idStr := r.PathValue("id") // 경로에서 {id} 부분 꺼내기
@@ -129,7 +120,7 @@ func parseID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return id, true
 }
 
-// handleServiceError는 아래 계층에서 올라온 에러를 알맞은 HTTP 상태 코드로 바꿉니다.
+// 아래 계층에서 올라온 에러를 알맞은 HTTP 상태 코드로 바꿉니다.
 // 에러를 처리했으면 true를 반환합니다(호출한 쪽은 그대로 return하면 됨).
 func handleServiceError(w http.ResponseWriter, err error) bool {
 	if err == nil {
@@ -146,14 +137,14 @@ func handleServiceError(w http.ResponseWriter, err error) bool {
 	return true
 }
 
-// writeJSON은 데이터를 JSON으로 바꿔 응답으로 내려줍니다.
+// 데이터를 JSON으로 응답
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-// writeError는 {"error": "메시지"} 형태의 JSON 에러 응답을 내려줍니다.
+// {"error": "메시지"} 형태의 JSON 에러 응답
 func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
